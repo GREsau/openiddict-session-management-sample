@@ -1,0 +1,19 @@
+@page
+@model Contruum.Server.Pages.Connect.EndSessionModel
+@using Microsoft.Extensions.Primitives
+
+<div class="jumbotron">
+    <h1>Log out</h1>
+    <p class="lead text-left">Are you sure you want to sign out?</p>
+
+    <form asp-antiforgery="true" method="post">
+        @* Flow the request parameters so they can be received by the LogoutPost action: *@
+        @foreach (var parameter in Request.HasFormContentType ?
+            (IEnumerable<KeyValuePair<string, StringValues>>)Request.Form : Request.Query)
+        {
+            <input type="hidden" name="@parameter.Key" value="@parameter.Value" />
+        }
+
+        <input class="btn btn-lg btn-success" name="Confirm" type="submit" value="Yes" />
+    </form>
+</div>

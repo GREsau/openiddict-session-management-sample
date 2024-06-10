@@ -69,11 +69,13 @@ public class Startup
                 options.SetAuthorizationEndpointUris(Configuration["OpenIddict:Endpoints:Authorization"]!)
                        .SetTokenEndpointUris(Configuration["OpenIddict:Endpoints:Token"]!)
                        .SetIntrospectionEndpointUris(Configuration["OpenIddict:Endpoints:Introspection"]!)
-                       .SetUserinfoEndpointUris(Configuration["OpenIddict:Endpoints:Userinfo"]!);
+                       .SetUserinfoEndpointUris(Configuration["OpenIddict:Endpoints:Userinfo"]!)
+                       .SetLogoutEndpointUris(Configuration["OpenIddict:Endpoints:Logout"]!);
 
-                // Enable the authorization code, implicit and the refresh token flows.
+                // Enable the authorization code, implicit, hybrid and the refresh token flows.
                 options.AllowAuthorizationCodeFlow()
                        .AllowImplicitFlow()
+                       .AllowHybridFlow()
                        .AllowRefreshTokenFlow();
 
                 // Expose all the supported claims in the discovery document.
@@ -93,7 +95,8 @@ public class Startup
                 // so that token requests are automatically handled by OpenIddict.
                 options.UseAspNetCore()
                        .EnableAuthorizationEndpointPassthrough()
-                       .EnableAuthorizationRequestCaching();
+                       .EnableAuthorizationRequestCaching()
+                       .EnableLogoutEndpointPassthrough();
 
                 // Register the event handler responsible for populating userinfo responses.
                 options.AddEventHandler<HandleUserinfoRequestContext>(options =>
