@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 using Contruum.Server.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -37,6 +38,16 @@ public class Startup
                 options.AccessDeniedPath = "/connect/signin";
                 options.LoginPath = "/connect/signin";
                 options.LogoutPath = "/connect/signout";
+                options.Events.OnSignedIn = (context) =>
+                {
+                    context.Response.IssueSessionCookie();
+                    return Task.CompletedTask;
+                };
+                options.Events.OnSigningOut = (context) =>
+                {
+                    context.Response.DeleteSessionCookie();
+                    return Task.CompletedTask;
+                };
             });
 
         // OpenIddict offers native integration with Quartz.NET to perform scheduled tasks
@@ -101,6 +112,12 @@ public class Startup
                 // Register the event handler responsible for populating userinfo responses.
                 options.AddEventHandler<HandleUserinfoRequestContext>(options =>
                     options.UseSingletonHandler<Handlers.PopulateUserinfo>());
+
+                options.AddEventHandler<HandleConfigurationRequestContext>(options =>
+                    options.UseSingletonHandler<Handlers.AttachCheckSessionIframeEndpoint>());
+
+                options.AddEventHandler<ApplyAuthorizationResponseContext>(options =>
+                    options.UseSingletonHandler<Handlers.AttachSessionState>());
             })
 
             .AddValidation(options =>

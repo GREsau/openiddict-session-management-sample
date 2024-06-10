@@ -1,0 +1,49 @@
+@page
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<title>OIDC Check Session</title>
+<script>
+    const sessionCookieName = '@Contruum.Server.SessionIdExtensions.CookieName';
+
+    async function checkSession(origin, message) {
+        try {
+            if (!origin || !message) {
+                return 'error';
+            }
+
+            const [clientId, sessionState] = message.split(' ');
+            if (!clientId || !sessionState) {
+                return 'error';
+            }
+
+            const [clientHash, salt] = sessionState.split('.');
+            if (!clientHash || !salt) {
+                return 'error';
+            }
+
+            const sessionId = document.cookie.split('; ').find(c => c.startsWith(sessionCookieName + '='))?.split('=')?.[1];
+            if (!sessionId) {
+                return 'changed';
+            }
+
+            const utf8Bytes = new TextEncoder().encode(clientId + origin + sessionId + salt);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', utf8Bytes);
+            const hashBytes = new Uint8Array(hashBuffer);
+            const hashBase64 = btoa(Array.from(hashBytes, byte => String.fromCharCode(byte)).join(''));
+            const hashBase64Url = hashBase64.replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+
+            return clientHash === hashBase64Url ? 'unchanged' : 'changed';
+        } catch (e) {
+            console.error('OIDC Check Session error', e)
+            return 'error';
+        }
+    }
+
+    window.addEventListener('message', async function (e) {
+        const result = await checkSession(e.origin, e.data);
+        e.source.postMessage(result, e.origin);
+    }, false);
+</script>
