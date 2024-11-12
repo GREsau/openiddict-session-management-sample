@@ -43,6 +43,10 @@
     }
 
     window.addEventListener('message', async function (e) {
+        if (e.source === self) {
+            return;
+        }
+
         const result = await checkSession(e.origin, e.data);
         e.source.postMessage(result, e.origin);
     }, false);
